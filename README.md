@@ -67,18 +67,6 @@ Each device has a unique ID. Memory entries are tagged:
 - Device ID markers prevent accidental overwrites
 - Manual merge for critical conflicts
 
-## GitBrain vs MIS
-
-| | MIS | GitBrain |
-|---|---|---|
-| Problem | Single-instance memory expansion | Multi-device sync |
-| Solution | Memory index + Skill storage | Git-based sync |
-| Scope | One device | Multiple devices |
-
-**Use together:**
-1. MIS optimizes memory on each device (100x expansion)
-2. GitBrain syncs optimized memory across devices
-
 ## License
 
 MIT
@@ -86,4 +74,3 @@ MIT
 ## Related Projects
 
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) — AI Agent Framework
-- [Hermes MIS](https://github.com/FSWei/hermes-mis) — Single-instance memory optimization

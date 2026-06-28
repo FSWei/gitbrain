@@ -67,18 +67,6 @@ hermes skills install https://github.com/FSWei/gitbrain
 - 设备 ID 标记防止意外覆盖
 - 关键冲突提示用户手动合并
 
-## GitBrain vs MIS
-
-| | MIS | GitBrain |
-|---|---|---|
-| 解决什么 | 单实例记忆扩展 | 多设备同步 |
-| 方案 | Memory 索引 + Skill 存储 | Git 同步 |
-| 范围 | 单设备 | 多设备 |
-
-**组合使用：**
-1. MIS 优化每台设备的记忆（100 倍扩展）
-2. GitBrain 同步优化后的记忆到所有设备
-
 ## 许可证
 
 MIT
@@ -86,4 +74,3 @@ MIT
 ## 相关项目
 
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) — AI Agent 框架
-- [Hermes MIS](https://github.com/FSWei/hermes-mis) — 单实例记忆优化

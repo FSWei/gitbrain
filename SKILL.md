@@ -97,30 +97,50 @@ gh repo create my-gitbrain --private --clone
 # Create repo at gitee.com
 ```
 
-### Step 2: Configure GitBrain
-
-Say to Hermes:
-```
-Configure GitBrain with repo https://github.com/your-username/my-gitbrain
-```
-
-Or manually create `~/.hermes/gitbrain.yaml`:
-```yaml
-repo_url: https://github.com/your-username/my-gitbrain
-device_id: pc-win  # unique per device
-auto_pull: true
-auto_push: true
-sync_interval: 300  # seconds
-```
-
-### Step 3: Initial Sync
+### Step 2: Run Setup Script
 
 ```bash
-# Clone repo
-git clone https://github.com/your-username/my-gitbrain ~/.hermes/gitbrain
+# Download and run setup
+curl -sSL https://raw.githubusercontent.com/FSWei/gitbrain/main/scripts/setup.sh | bash -s -- <repo_url> <device_id>
 
-# Initial backup
-hermes gitbrain sync
+# Example:
+curl -sSL https://raw.githubusercontent.com/FSWei/gitbrain/main/scripts/setup.sh | bash -s -- https://github.com/user/gitbrain.git pc-win
+```
+
+### Step 3: Register Sync Hooks
+
+```bash
+# Auto-register in SOUL.md
+bash ~/.hermes/gitbrain/scripts/sync.sh register
+```
+
+This adds to SOUL.md:
+```markdown
+## GitBrain Sync
+On session start: run `bash ~/.hermes/gitbrain/scripts/sync.sh pull`
+After Memory/Skill change: run `bash ~/.hermes/gitbrain/scripts/sync.sh push`
+```
+
+## Commands
+
+```bash
+# Manual sync
+bash ~/.hermes/gitbrain/scripts/sync.sh sync
+
+# Pull only
+bash ~/.hermes/gitbrain/scripts/sync.sh pull
+
+# Push only
+bash ~/.hermes/gitbrain/scripts/sync.sh push
+
+# Show status
+bash ~/.hermes/gitbrain/scripts/sync.sh status
+
+# Start auto sync in background
+bash ~/.hermes/gitbrain/scripts/sync.sh auto
+
+# Register sync hooks in SOUL.md
+bash ~/.hermes/gitbrain/scripts/sync.sh register
 ```
 
 ## Directory Structure
@@ -145,41 +165,24 @@ my-gitbrain/
 └── .gitignore
 ```
 
-## Commands
+## Configuration
 
-```bash
-# Manual sync
-hermes gitbrain sync
+GitBrain config is at `~/.hermes/gitbrain.yaml`:
 
-# Pull only
-hermes gitbrain pull
+```yaml
+repo_url: https://github.com/user/gitbrain.git
+device_id: pc-win
+auto_pull: true
+auto_push: true
+sync_interval: 300
 
-# Push only
-hermes gitbrain push
+sync:
+  skills: true
+  memories: true
+  config: false
 
-# Show status
-hermes gitbrain status
-
-# List devices
-hermes gitbrain devices
-
-# Resolve conflicts
-hermes gitbrain resolve
+conflict_strategy: timestamp
 ```
-
-## Integration with MIS
-
-GitBrain and MIS are complementary:
-
-| | MIS | GitBrain |
-|---|---|---|
-| Problem | Single-instance memory expansion | Multi-device sync |
-| Solution | Memory index + Skill storage + SOUL rules | Git-based sync + conflict resolution |
-| Scope | One device | Multiple devices |
-
-**Combined usage:**
-1. MIS optimizes memory on each device (100x expansion)
-2. GitBrain syncs optimized memory across devices
 
 ## Pitfalls
 
@@ -212,5 +215,4 @@ High-frequency changes cause conflicts. Solution:
 ## Related Projects
 
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) — AI Agent Framework
-- [Hermes MIS](https://github.com/FSWei/hermes-mis) — Single-instance memory optimization
 - [hermes-git-backup](https://github.com/FSWei/hermes-git-backup) — Manual backup (GitBrain precursor)
