@@ -1,152 +1,158 @@
 ---
 name: gitbrain
-description: "Give your Agent a Git brain — auto-sync Skills and Memory across devices using Git. One-command setup, automatic pull/push on change, conflict resolution, device-aware memory."
+description: "Use when user says enable GitBrain, sync memory, 多设备同步, Git同步. Give your Agent a Git brain — auto-sync Skills and Memory across devices using Git. One-command setup, automatic pull/push on change, device-aware memory."
 ---
 
 # GitBrain
 
 **Give your Agent a Git brain.**
 
-Auto-sync Skills and Memory across devices using Git — no separate cloud server needed. Every device's local Agent shares the same Git memory bank.
+Auto-sync Skills and Memory across devices using Git — no separate cloud server needed.
 
 ## Quick Start
 
-### Option 1: One-Command Install (Recommended)
+### One-Command Install
 
 Say to Hermes:
+```
+Enable GitBrain sync
+```
+
+Or:
 ```
 Install skill from https://github.com/FSWei/gitbrain
 ```
 
-Or use CLI:
+## Execution Flow
+
+When user says "Enable GitBrain sync" or "Sync memory":
+
+### Step 1: Check Prerequisites
+
 ```bash
-hermes skills install https://github.com/FSWei/gitbrain
+# Check if git is installed
+command -v git && echo "Git OK" || echo "Git not installed"
+
+# Check if Hermes directory exists
+ls -la ~/.hermes/
 ```
 
-Then say: `Enable GitBrain sync`
+### Step 2: Get Configuration
 
-### Option 2: Manual Install
+Ask user:
+1. **Git repository URL** (GitHub/Gitee)
+2. **Device ID** (e.g., pc-win, macbook, server-linux)
 
-1. Copy `SKILL.md` to `~/.hermes/skills/gitbrain.md`
-2. Say to Hermes: `Enable GitBrain sync`
+### Step 3: Clone Repository
 
-## How It Works
+```bash
+# Clone to ~/.hermes/gitbrain/
+git clone <repo_url> ~/.hermes/gitbrain
 
-```
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-│  Device A    │   │  Device B    │   │  Device C    │
-│  Local Agent │   │  Local Agent │   │  Local Agent │
-│  (hands+brain)│  │  (hands+brain)│  │  (hands+brain)│
-└──────┬──────┘   └──────┬──────┘   └──────┬──────┘
-       │ pull/push       │ pull/push       │ pull/push
-       └────────┬────────┴────────┬────────┘
-         ┌──────▼──────────────────▼──────┐
-         │     Git Repo (GitHub/Gitee)    │
-         │  Skills/  Memories/  Config/   │
-         └────────────────────────────────┘
+# If already exists, pull latest
+cd ~/.hermes/gitbrain && git pull
 ```
 
-## Core Features
+### Step 4: Create Config
 
-### 1. Auto Sync
+Write config to `~/.hermes/gitbrain.yaml`:
 
-- **On startup**: `git pull` to get latest changes
-- **On change**: `git commit && push` to save changes
-- **Conflict detection**: Timestamp + device ID based resolution
-
-### 2. Device Awareness
-
-Each device has a unique ID. Memory entries are tagged:
-
+```yaml
+repo_url: <user_provided_url>
+device_id: <user_provided_id>
+auto_pull: true
+auto_push: true
+sync_interval: 300
 ```
-# Shared memory (synced across all devices)
+
+### Step 5: Register Sync Hooks
+
+Add to SOUL.md:
+
+```markdown
+## GitBrain Sync
+On session start: pull latest from GitBrain repo
+After Memory/Skill change: push to GitBrain repo
+```
+
+## Sync Commands
+
+When user says "sync memory" or "pull/push memory":
+
+### Pull (Get Latest)
+
+```bash
+cd ~/.hermes/gitbrain
+git stash 2>/dev/null || true
+git pull --rebase origin master 2>/dev/null || git pull --rebase origin main 2>/dev/null || git pull
+git stash pop 2>/dev/null || true
+```
+
+### Push (Save Changes)
+
+```bash
+cd ~/.hermes/gitbrain
+
+# Copy current skills and memories
+cp -r ~/.hermes/skills/* skills/ 2>/dev/null || true
+cp -r ~/.hermes/memories/* memories/shared/ 2>/dev/null || true
+cp ~/.hermes/SOUL.md memories/shared/SOUL.md 2>/dev/null || true
+
+# Commit and push
+git add -A
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+DEVICE_ID=$(grep 'device_id:' ~/.hermes/gitbrain.yaml | sed 's/.*: //')
+git commit -m "GitBrain sync [$DEVICE_ID] — $TIMESTAMP" --allow-empty
+git push origin master 2>/dev/null || git push origin main
+```
+
+### Full Sync
+
+```bash
+# Pull first, then push
+cd ~/.hermes/gitbrain
+git stash 2>/dev/null || true
+git pull --rebase origin master 2>/dev/null || git pull --rebase origin main 2>/dev/null || git pull
+git stash pop 2>/dev/null || true
+
+# Copy and push
+cp -r ~/.hermes/skills/* skills/ 2>/dev/null || true
+cp -r ~/.hermes/memories/* memories/shared/ 2>/dev/null || true
+cp ~/.hermes/SOUL.md memories/shared/SOUL.md 2>/dev/null || true
+
+git add -A
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+DEVICE_ID=$(grep 'device_id:' ~/.hermes/gitbrain.yaml | sed 's/.*: //')
+git commit -m "GitBrain sync [$DEVICE_ID] — $TIMESTAMP" --allow-empty
+git push origin master 2>/dev/null || git push origin main
+```
+
+## Device-Aware Memory
+
+### Shared Memory (Synced Across All Devices)
+
+Memory entries with `device: shared` tag:
+```
 §user_prefs: see skill user-prefs. device: shared.
+§identity: see skill fsw-identity. device: shared.
+```
 
-# Device-private memory (only on this device)
+### Device-Private Memory (Only on This Device)
+
+Memory entries with device-specific tag:
+```
 §local_project: see skill local-project. device: pc-win.
+§server_config: see skill server-config. device: server-linux.
 ```
 
 **Sync rules:**
-- `shared` memory → bidirectional sync across all devices
-- Device-private memory → backup to Git but don't overwrite other devices
-
-### 3. Conflict Resolution
-
-When two devices modify the same memory:
-
-1. **Timestamp priority**: Latest change wins
-2. **Device ID marker**: Prevents accidental overwrites
-3. **Manual merge**: For critical conflicts, prompt user
-
-### 4. Granular Sync
-
-Unlike full backup, GitBrain syncs at the file level:
-- Each memory entry = one file
-- Each skill = one directory
-- Changes are atomic per entry
-
-## Setup
-
-### Step 1: Create Git Repository
-
-```bash
-# GitHub (recommended)
-gh repo create my-gitbrain --private --clone
-
-# Or Gitee (for China users)
-# Create repo at gitee.com
-```
-
-### Step 2: Run Setup Script
-
-```bash
-# Download and run setup
-curl -sSL https://raw.githubusercontent.com/FSWei/gitbrain/main/scripts/setup.sh | bash -s -- <repo_url> <device_id>
-
-# Example:
-curl -sSL https://raw.githubusercontent.com/FSWei/gitbrain/main/scripts/setup.sh | bash -s -- https://github.com/user/gitbrain.git pc-win
-```
-
-### Step 3: Register Sync Hooks
-
-```bash
-# Auto-register in SOUL.md
-bash ~/.hermes/gitbrain/scripts/sync.sh register
-```
-
-This adds to SOUL.md:
-```markdown
-## GitBrain Sync
-On session start: run `bash ~/.hermes/gitbrain/scripts/sync.sh pull`
-After Memory/Skill change: run `bash ~/.hermes/gitbrain/scripts/sync.sh push`
-```
-
-## Commands
-
-```bash
-# Manual sync
-bash ~/.hermes/gitbrain/scripts/sync.sh sync
-
-# Pull only
-bash ~/.hermes/gitbrain/scripts/sync.sh pull
-
-# Push only
-bash ~/.hermes/gitbrain/scripts/sync.sh push
-
-# Show status
-bash ~/.hermes/gitbrain/scripts/sync.sh status
-
-# Start auto sync in background
-bash ~/.hermes/gitbrain/scripts/sync.sh auto
-
-# Register sync hooks in SOUL.md
-bash ~/.hermes/gitbrain/scripts/sync.sh register
-```
+- `shared` → bidirectional sync
+- Device-private → backup only, don't overwrite other devices
 
 ## Directory Structure
 
 ```
-my-gitbrain/
+~/.hermes/gitbrain/
 ├── skills/
 │   ├── project-a/
 │   │   └── SKILL.md
@@ -155,47 +161,36 @@ my-gitbrain/
 ├── memories/
 │   ├── shared/
 │   │   ├── user_prefs.md
-│   │   └── identity.md
+│   │   └── SOUL.md
 │   ├── pc-win/
 │   │   └── local_projects.md
 │   └── server-linux/
 │       └── deployments.md
-├── config/
-│   └── devices.yaml
-└── .gitignore
+└── config/
 ```
 
-## Configuration
+## Auto Sync
 
-GitBrain config is at `~/.hermes/gitbrain.yaml`:
+To enable auto sync on every session start, add to SOUL.md:
 
-```yaml
-repo_url: https://github.com/user/gitbrain.git
-device_id: pc-win
-auto_pull: true
-auto_push: true
-sync_interval: 300
-
-sync:
-  skills: true
-  memories: true
-  config: false
-
-conflict_strategy: timestamp
+```markdown
+## GitBrain Auto Sync
+At session start: run terminal command `cd ~/.hermes/gitbrain && git pull`
+After any Memory change: run terminal command `cd ~/.hermes/gitbrain && git add -A && git commit -m "auto sync" && git push`
 ```
 
 ## Pitfalls
 
 ### Pitfall #1: Never git init at ~/.hermes/
 
-The GitBrain repo must be a SEPARATE clone, not inside `~/.hermes/`. Using `git init` at `~/.hermes/` will push secrets (`.env`) and session database (`state.db`).
+The GitBrain repo must be at `~/.hermes/gitbrain/`, NOT at `~/.hermes/`. Using `git init` at `~/.hermes/` will push secrets (`.env`) and session database (`state.db`).
 
 ### Pitfall #2: Large files
 
-Git is not for large files. Don't sync:
-- Session logs
+Don't sync:
+- Session logs (`*.log`)
 - Audio/image cache
-- Database files
+- Database files (`*.db`)
 
 ### Pitfall #3: Credential security
 
@@ -205,14 +200,6 @@ git config --global credential.helper store
 chmod 600 ~/.git-credentials
 ```
 
-### Pitfall #4: Conflict frequency
-
-High-frequency changes cause conflicts. Solution:
-- Batch changes locally
-- Push at intervals (not on every change)
-- Use device-private tags for volatile memory
-
 ## Related Projects
 
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) — AI Agent Framework
-- [hermes-git-backup](https://github.com/FSWei/hermes-git-backup) — Manual backup (GitBrain precursor)
