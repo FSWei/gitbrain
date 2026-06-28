@@ -61,28 +61,28 @@ GitBrain lets multiple devices share the same Agent knowledge base using Git —
 
 **Monday morning, PC:**
 ```
-You: "What's the status of the distillyourself project?"
+You: "What's the status of my-webapp?"
 Agent: [Reads from shared memory]
-       "distillyourself.cn — Vue3+Express+SQLite AI personality engine.
-        Server: 59.110.226.32. Status: In development.
-        Last update: Added JWT bypass captcha solution."
+       "my-webapp — React+Node.js e-commerce platform.
+        Server: 10.0.1.100. Status: In development.
+        Last update: Added JWT authentication."
 ```
 
 **Monday evening, MacBook:**
 ```
-You: "What's the status of the distillyourself project?"
+You: "What's the status of my-webapp?"
 Agent: [Same answer! Memory synced from PC]
-       "distillyourself.cn — Vue3+Express+SQLite AI personality engine.
-        Server: 59.110.226.32. Status: In development.
-        Last update: Added JWT bypass captcha solution."
+       "my-webapp — React+Node.js e-commerce platform.
+        Server: 10.0.1.100. Status: In development.
+        Last update: Added JWT authentication."
 ```
 
 **Tuesday, Server (via SSH):**
 ```
 You: "Deploy the latest version"
 Agent: [Already knows the project details]
-       "Deploying distillyourself to 59.110.226.32...
-        Using JWT bypass solution from yesterday's fix."
+       "Deploying my-webapp to 10.0.1.100...
+        Using JWT authentication from yesterday's implementation."
 ```
 
 **No repeated explanations. No lost context. Just seamless continuity.**
